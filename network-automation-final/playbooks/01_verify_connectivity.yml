@@ -1,0 +1,15 @@
+---
+- name: Verify connectivity to all network devices
+  hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: Run a simple show command to verify SSH connectivity
+      cisco.ios.ios_command:
+        commands:
+          - show version | include IOS
+      register: output
+
+    - name: Display device response
+      debug:
+        var: output.stdout_lines

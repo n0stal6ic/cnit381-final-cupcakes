@@ -1,0 +1,22 @@
+---
+- name: Base configuration for routers and switch
+  hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: Set device hostname
+      cisco.ios.ios_hostname:
+        hostname: "{{ device_hostname }}"
+
+    - name: Configure login banner
+      cisco.ios.ios_banner:
+        banner: login
+        text: Authorized users only.
+
+    - name: Configure interface descriptions
+      cisco.ios.ios_interface:
+        name: "{{ item.name }}"
+        description: "{{ interface_description }}"
+      loop:
+        - { name: "GigabitEthernet0/0" }
+        - { name: "GigabitEthernet0/1" }

@@ -1,0 +1,14 @@
+---
+- name: Configure NTP and logging services
+  hosts: all
+  gather_facts: no
+
+  tasks:
+
+    - name: Configure NTP
+      cisco.ios.ios_ntp:
+        server: "216.239.35.0"
+
+    - name: Configure logging buffer
+      cisco.ios.ios_logging:
+        buffered: 16384

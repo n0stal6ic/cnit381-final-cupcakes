@@ -1,33 +1,17 @@
 ---
-- name: Configure EIGRP and Loopbacks on Routers
+- name: Configure EIGRP on routers
   hosts: routers
   gather_facts: no
 
-  vars:
-    loopbacks:
-      - { id: 1, ip: "10.1.1.{{ router_id }}/32" }
-      - { id: 2, ip: "10.1.2.{{ router_id }}/32" }
-      - { id: 3, ip: "10.1.3.{{ router_id }}/32" }
-
   tasks:
-
-    - name: Set router_id variable based on inventory hostname
-      set_fact:
-        router_id: "{{ '1' if inventory_hostname == 'router1' else '2' }}"
-
-    - name: Create loopback interfaces
-      cisco.ios.ios_interface:
-        name: "Loopback{{ item.id }}"
-        enabled: true
-        description: "Loopback {{ item.id }} - auto configured"
-        ipv4:
-          address: "{{ item.ip }}"
-      loop: "{{ loopbacks }}"
-
-    - name: Configure EIGRP Autonomous System
+    - name: Enable EIGRP 100
       cisco.ios.ios_config:
         lines:
           - router eigrp 100
-          - network 10.0.0.0 0.255.255.255
+          - network 10.0.12.0 0.0.0.3
+          - network 192.168.10.0 0.0.0.255
+          - network 192.168.20.0 0.0.0.255
+          - network 192.168.100.0 0.0.0.255
+          - network 1.1.1.0 0.0.0.255
+          - network 2.2.2.0 0.0.0.255
           - no auto-summary
-        save_when: changed

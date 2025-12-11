@@ -1,0 +1,15 @@
+---
+- name: Backup device configurations
+  hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: Collect running configuration
+      cisco.ios.ios_config:
+        backup: yes
+      register: backup_output
+
+    - name: Save backup file locally
+      copy:
+        content: "{{ backup_output.backup_path | file_contents }}"
+        dest: "../backups/{{ inventory_hostname }}-backup.cfg"

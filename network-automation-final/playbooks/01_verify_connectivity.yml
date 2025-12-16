@@ -4,7 +4,7 @@
   gather_facts: no
 
   tasks:
-    - name: Run show version to verify access
+    - name: Verify device access with show version
       ios_command:
         commands:
           - show version

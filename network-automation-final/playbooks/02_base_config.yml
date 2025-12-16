@@ -22,63 +22,40 @@
           - hostname SW1
       when: inventory_hostname == 'SW1'
 
-    - name: Configure login banner
+    - name: Set login banner
       cisco.ios.ios_banner:
-        banner: motd
+        banner: login
         text: |
           ******************************************
-          * Authorized Access Only                *
-          * CNIT 381 Network Automation Project   *
-          * Configured via Ansible                *
+          * Authorized CNIT 381 Network           *
+          * No Unauthorized Access                *
           ******************************************
         state: present
 
-    - name: Configure management interface description on routers
+    - name: Set interface descriptions on routers
       cisco.ios.ios_config:
         lines:
-          - description Management Interface
+          - description Managed by Ansible
         parents: interface GigabitEthernet0/0/1
       when: inventory_hostname in groups['routers']
 
-    - name: Configure management interface description on switch
+    - name: Set interface description on switch
       cisco.ios.ios_config:
         lines:
-          - description Management Interface
+          - description Managed by Ansible
         parents: interface Vlan1
       when: inventory_hostname in groups['switches']
-
-    - name: Configure data interface on R1
-      cisco.ios.ios_config:
-        lines:
-          - description Connected to SW1
-          - ip address 10.0.1.1 255.255.255.0
-          - no shutdown
-        parents: interface GigabitEthernet0/1/1
-      when: inventory_hostname == 'R1'
-
-    - name: Configure data interface on R2
-      cisco.ios.ios_config:
-        lines:
-          - description Connected to SW1
-          - ip address 10.0.2.1 255.255.255.0
-          - no shutdown
-        parents: interface GigabitEthernet0/1/1
-      when: inventory_hostname == 'R2'
 
     - name: Save configuration
       cisco.ios.ios_config:
         save_when: always
 
-    - name: Verify hostname configuration
+    - name: Verify hostname
       cisco.ios.ios_command:
         commands:
           - show running-config | include hostname
       register: hostname_output
 
-    - name: Display hostname configuration
+    - name: Display results
       ansible.builtin.debug:
-        var: hostname_output.stdout_lines
-
-    - name: Display success message
-      ansible.builtin.debug:
-        msg: "✓ Base configuration completed on {{ inventory_hostname }}"
+        msg: "✓ Configuration applied to {{ inventory_hostname }}"

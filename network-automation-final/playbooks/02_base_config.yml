@@ -1,33 +1,31 @@
 ---
-- name: Base configuration
+- name: Base configuration for routers and switches
   hosts: network
   gather_facts: no
 
   tasks:
     - name: Set hostname
       ios_config:
-        state: replaced
-        lines:
+        config:
           - hostname {{ inventory_hostname }}
 
     - name: Configure login banner
       ios_config:
-        state: replaced
-        lines:
+        config:
           - banner login ^AUTHORIZED ACCESS ONLY^
 
-    - name: Configure interface descriptions (routers only)
+    - name: Configure interface descriptions on routers
       ios_config:
-        state: replaced
-        parents: interface GigabitEthernet0/0/1
-        lines:
+        parents:
+          - interface GigabitEthernet0/0/1
+        config:
           - description Management Interface
       when: inventory_hostname in groups['routers']
 
-    - name: Configure interface descriptions (switch)
+    - name: Configure interface descriptions on switch
       ios_config:
-        state: replaced
-        parents: interface Vlan1
-        lines:
+        parents:
+          - interface Vlan1
+        config:
           - description Management VLAN
       when: inventory_hostname in groups['switches']

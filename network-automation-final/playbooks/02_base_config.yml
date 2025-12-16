@@ -5,17 +5,17 @@
 
   tasks:
     - name: Set hostname
-      ios_config:
+      cisco.ios.ios_config:
         config:
           - hostname {{ inventory_hostname }}
 
     - name: Configure login banner
-      ios_config:
+      cisco.ios.ios_config:
         config:
           - banner login ^AUTHORIZED ACCESS ONLY^
 
     - name: Configure interface descriptions on routers
-      ios_config:
+      cisco.ios.ios_config:
         parents:
           - interface GigabitEthernet0/0/1
         config:
@@ -23,7 +23,7 @@
       when: inventory_hostname in groups['routers']
 
     - name: Configure interface descriptions on switch
-      ios_config:
+      cisco.ios.ios_config:
         parents:
           - interface Vlan1
         config:

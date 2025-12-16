@@ -1,5 +1,5 @@
 ---
-- name: Base configuration for routers and switches
+- name: Base configuration
   hosts: network
   gather_facts: no
 
@@ -16,7 +16,7 @@
           * Authorized CNIT 381 Network - No Unauthorized Access *
           ************************************************
 
-    - name: Set interface description on routers
+    - name: Set router interface description
       cisco.ios.ios_config:
         parents:
           - interface GigabitEthernet0/0/1
@@ -24,7 +24,7 @@
           - description Managed by Ansible
       when: inventory_hostname in groups['routers']
 
-    - name: Configure SSH and security settings
+    - name: Configure SSH prerequisites
       cisco.ios.ios_config:
         config:
           - ip domain-name cnit381.com

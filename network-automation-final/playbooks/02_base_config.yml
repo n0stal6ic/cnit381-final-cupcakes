@@ -6,16 +6,19 @@
   tasks:
     - name: Set hostname
       ios_config:
+        state: replaced
         lines:
           - hostname {{ inventory_hostname }}
 
     - name: Configure login banner
       ios_config:
+        state: replaced
         lines:
           - banner login ^AUTHORIZED ACCESS ONLY^
 
     - name: Configure interface descriptions (routers only)
       ios_config:
+        state: replaced
         parents: interface GigabitEthernet0/0/1
         lines:
           - description Management Interface
@@ -23,6 +26,7 @@
 
     - name: Configure interface descriptions (switch)
       ios_config:
+        state: replaced
         parents: interface Vlan1
         lines:
           - description Management VLAN

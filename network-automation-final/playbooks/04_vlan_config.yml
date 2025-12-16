@@ -1,38 +1,21 @@
 ---
-- name: Configure VLANs and trunking
+- name: Configure VLANs on switch
   hosts: switches
   gather_facts: no
 
   tasks:
     - name: Create VLANs
-      cisco.ios.ios_vlans:
-        config:
-          - vlan_id: 10
-            name: DATA
-          - vlan_id: 20
-            name: VOICE
-          - vlan_id: 100
-            name: MANAGEMENT
-        state: merged
+      ios_config:
+        lines:
+          - vlan 10
+          - name DATA
+          - vlan 20
+          - name VOICE
+          - vlan 99
+          - name MANAGEMENT
 
-    - name: Set trunk ports (fa0/1 and fa0/2)
-      cisco.ios.ios_l2_interfaces:
-        config:
-          - name: fa0/1
-            mode: trunk
-            trunk:
-              allowed_vlans: "10,20,100"
-          - name: fa0/2
-            mode: trunk
-            trunk:
-              allowed_vlans: "10,20,100"
-        state: merged
-
-    - name: Assign Ansible management port (fa0/24) to VLAN 100
-      cisco.ios.ios_l2_interfaces:
-        config:
-          - name: fa0/24
-            mode: access
-            access:
-              vlan: 100
-        state: merged
+    - name: Configure trunk port to router
+      ios_config:
+        parents: interface FastEthernet0/1
+        lines:
+          - switchport mode trunk

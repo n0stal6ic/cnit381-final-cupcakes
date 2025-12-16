@@ -1,32 +1,29 @@
 ---
-- name: Base configuration for routers and switches
-  hosts: all
+- name: Base configuration
+  hosts: network
   gather_facts: no
 
   tasks:
     - name: Set hostname
-      cisco.ios.ios_hostname:
-        hostname: "{{ inventory_hostname | upper }}"
-
-    - name: Set login banner
-      cisco.ios.ios_banner:
-        banner: login
-        text: |
-          ************************************************
-          * Authorized CNIT 381 Network - No Unauthorized Access *
-          ************************************************
-
-    - name: Set interface descriptions
-      cisco.ios.ios_config:
+      ios_config:
         lines:
-          - description Managed by Ansible
-        parents: "interface g0/0"
-      when: "'router' in inventory_hostname"
+          - hostname {{ inventory_hostname }}
 
-    - name: Enable SSH settings
-      cisco.ios.ios_config:
+    - name: Configure login banner
+      ios_config:
         lines:
-          - ip domain-name cnit381.com
-          - username admin secret Cnit381!
-          - crypto key generate rsa modulus 1024
-        match: none
+          - banner login ^AUTHORIZED ACCESS ONLY^
+
+    - name: Configure interface descriptions (routers only)
+      ios_config:
+        lines:
+          - description Management Interface
+        parents: interface GigabitEthernet0/0/1
+      when: inventory_hostname in groups['routers']
+
+    - name: Configure interface descriptions (switch)
+      ios_config:
+        parents: interface Vlan1
+        lines:
+          - description Management VLAN
+      when: inventory_hostname in groups['switches']

@@ -1,17 +1,19 @@
 ---
-- name: Configure EIGRP on routers
+- name: Configure EIGRP routing
   hosts: routers
   gather_facts: no
 
   tasks:
-    - name: Enable EIGRP 100
-      cisco.ios.ios_config:
+    - name: Create loopback interfaces
+      ios_config:
+        lines:
+          - interface Loopback{{ item }}
+          - ip address 10.{{ inventory_hostname[-1] }}.{{ item }}.1 255.255.255.255
+      loop: [1, 2, 3]
+
+    - name: Configure EIGRP AS 100
+      ios_config:
         lines:
           - router eigrp 100
-          - network 10.0.12.0 0.0.0.3
-          - network 192.168.10.0 0.0.0.255
-          - network 192.168.20.0 0.0.0.255
-          - network 192.168.100.0 0.0.0.255
-          - network 1.1.1.0 0.0.0.255
-          - network 2.2.2.0 0.0.0.255
+          - network 0.0.0.0
           - no auto-summary

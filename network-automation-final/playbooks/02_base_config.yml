@@ -16,17 +16,22 @@
           * Authorized CNIT 381 Network - No Unauthorized Access *
           ************************************************
 
-    - name: Set router interface description
-      cisco.ios.ios_config:
-        parents:
-          - interface GigabitEthernet0/0/1
+    - name: Configure domain name
+      cisco.ios.ios_system:
+        domain_name: cnit381.com
+
+    - name: Configure router interface descriptions
+      cisco.ios.ios_interfaces:
         config:
-          - description Managed by Ansible
+          - name: GigabitEthernet0/0/1
+            description: Management Interface
+            enabled: true
       when: inventory_hostname in groups['routers']
 
-    - name: Configure SSH prerequisites
-      cisco.ios.ios_config:
+    - name: Configure switch management interface description
+      cisco.ios.ios_interfaces:
         config:
-          - ip domain-name cnit381.com
-          - username admin privilege 15 secret Cnit381!
-          - crypto key generate rsa modulus 1024
+          - name: Vlan1
+            description: Management VLAN
+            enabled: true
+      when: inventory_hostname in groups['switches']

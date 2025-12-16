@@ -1,8 +1,30 @@
 ---
-- name: Verify connectivity
-  hosts: all
+- name: Verify Network Connectivity
+  hosts: network
   gather_facts: no
-
+  
   tasks:
-    - name: Ping device
-      ansible.netcommon.net_ping:
+    - name: Test reachability to all devices
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
+        port: 22
+        timeout: 10
+      delegate_to: localhost
+
+    - name: Gather basic device facts
+      cisco.ios.ios_facts:
+        gather_subset: min
+
+    - name: Display device information
+      ansible.builtin.debug:
+        msg: "Device {{ inventory_hostname }} is reachable - Model: {{ ansible_net_model }}, Version: {{ ansible_net_version }}"
+
+    - name: Test SSH authentication
+      cisco.ios.ios_command:
+        commands:
+          - show version
+      register: version_output
+
+    - name: Confirm connectivity success
+      ansible.builtin.debug:
+        msg: " Successfully connected to {{ inventory_hostname }}"

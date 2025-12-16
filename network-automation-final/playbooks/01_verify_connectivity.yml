@@ -1,8 +1,10 @@
 ---
-- name: Verify connectivity to all devices
+- name: Verify connectivity
   hosts: network
   gather_facts: no
 
   tasks:
-    - name: Ping devices using Ansible
-      ansible.builtin.ping
+    - name: Run show version to verify access
+      ios_command:
+        commands:
+          - show version

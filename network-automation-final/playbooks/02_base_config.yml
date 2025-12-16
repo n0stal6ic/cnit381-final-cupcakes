@@ -1,5 +1,5 @@
 ---
-- name: Base configuration for routers and switches
+- name: Base configuration
   hosts: network
   gather_facts: no
 
@@ -19,16 +19,22 @@
           * Authorized CNIT 381 Network - No Unauthorized Access *
           ************************************************
 
-    - name: Configure router interface description
-      ios_config:
-        parents:
-          - interface GigabitEthernet0/0/1
+    - name: Configure domain name
+      ios_system:
+        domain_name: cnit381.com
+
+    - name: Configure router management interface description
+      ios_interfaces:
         config:
-          - description Managed by Ansible
+          - name: GigabitEthernet0/0/1
+            description: Management Interface
+            enabled: true
       when: inventory_hostname in groups['routers']
 
-    - name: Configure domain name and SSH prereqs
-      ios_config:
+    - name: Configure switch management VLAN description
+      ios_interfaces:
         config:
-          - ip domain-name cnit381.com
-          - username admin privilege 15 secret Cnit381!
+          - name: Vlan1
+            description: Management VLAN
+            enabled: true
+      when: inventory_hostname in groups['switches']

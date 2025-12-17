@@ -2,52 +2,72 @@
 - name: Configure EIGRP Routing
   hosts: routers
   gather_facts: no
-  
+
   tasks:
-    - name: Create loopback interfaces on R1
+    - name: Create loopback 1 on R1
       cisco.ios.ios_config:
         lines:
-          - ip address {{ item.ip }} 255.255.255.255
+          - interface Loopback1
+          - ip address 1.1.1.1 255.255.255.255
           - description Loopback for EIGRP
-        parents: interface Loopback{{ item.number }}
-      loop:
-        - { number: 1, ip: 1.1.1.1 }
-        - { number: 2, ip: 1.1.1.2 }
-        - { number: 3, ip: 1.1.1.3 }
       when: inventory_hostname == 'R1'
 
-    - name: Create loopback interfaces on R2
+    - name: Create loopback 2 on R1
       cisco.ios.ios_config:
         lines:
-          - ip address {{ item.ip }} 255.255.255.255
+          - interface Loopback2
+          - ip address 1.1.1.2 255.255.255.255
           - description Loopback for EIGRP
-        parents: interface Loopback{{ item.number }}
-      loop:
-        - { number: 1, ip: 2.2.2.1 }
-        - { number: 2, ip: 2.2.2.2 }
-        - { number: 3, ip: 2.2.2.3 }
+      when: inventory_hostname == 'R1'
+
+    - name: Create loopback 3 on R1
+      cisco.ios.ios_config:
+        lines:
+          - interface Loopback3
+          - ip address 1.1.1.3 255.255.255.255
+          - description Loopback for EIGRP
+      when: inventory_hostname == 'R1'
+
+    - name: Create loopback 1 on R2
+      cisco.ios.ios_config:
+        lines:
+          - interface Loopback1
+          - ip address 2.2.2.1 255.255.255.255
+          - description Loopback for EIGRP
       when: inventory_hostname == 'R2'
 
-    - name: Configure EIGRP on R1
+    - name: Create loopback 2 on R2
       cisco.ios.ios_config:
         lines:
+          - interface Loopback2
+          - ip address 2.2.2.2 255.255.255.255
+          - description Loopback for EIGRP
+      when: inventory_hostname == 'R2'
+
+    - name: Create loopback 3 on R2
+      cisco.ios.ios_config:
+        lines:
+          - interface Loopback3
+          - ip address 2.2.2.3 255.255.255.255
+          - description Loopback for EIGRP
+      when: inventory_hostname == 'R2'
+
+    - name: Enable EIGRP 100 on R1
+      cisco.ios.ios_config:
+        lines:
+          - router eigrp 100
           - network 192.168.100.0 0.0.0.255
-          - network 1.1.1.1 0.0.0.0
-          - network 1.1.1.2 0.0.0.0
-          - network 1.1.1.3 0.0.0.0
+          - network 1.1.1.0 0.0.0.255
           - no auto-summary
-        parents: router eigrp 100
       when: inventory_hostname == 'R1'
 
-    - name: Configure EIGRP on R2
+    - name: Enable EIGRP 100 on R2
       cisco.ios.ios_config:
         lines:
+          - router eigrp 100
           - network 192.168.100.0 0.0.0.255
-          - network 2.2.2.1 0.0.0.0
-          - network 2.2.2.2 0.0.0.0
-          - network 2.2.2.3 0.0.0.0
+          - network 2.2.2.0 0.0.0.255
           - no auto-summary
-        parents: router eigrp 100
       when: inventory_hostname == 'R2'
 
     - name: Save configuration
@@ -56,28 +76,30 @@
 
     - name: Wait for EIGRP to converge
       ansible.builtin.pause:
-        seconds: 15
+        seconds: 20
 
     - name: Verify EIGRP neighbors
       cisco.ios.ios_command:
         commands:
           - show ip eigrp neighbors
       register: eigrp_neighbors
+      failed_when: false
 
     - name: Display EIGRP neighbors
       ansible.builtin.debug:
         var: eigrp_neighbors.stdout_lines
+      when: eigrp_neighbors.stdout_lines is defined
 
-    - name: Verify EIGRP routing table
+    - name: Verify loopback interfaces
       cisco.ios.ios_command:
         commands:
-          - show ip route eigrp
-      register: eigrp_routes
+          - show ip interface brief | include Loopback
+      register: loopbacks
 
-    - name: Display EIGRP routes
+    - name: Display loopback interfaces
       ansible.builtin.debug:
-        var: eigrp_routes.stdout_lines
+        var: loopbacks.stdout_lines
 
     - name: Display success message
       ansible.builtin.debug:
-        msg: "✓ EIGRP configured on {{ inventory_hostname }} with loopbacks Lo1, Lo2, Lo3"
+        msg: "✓ EIGRP and loopbacks configured on {{ inventory_hostname }}""

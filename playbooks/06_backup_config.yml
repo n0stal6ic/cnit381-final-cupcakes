@@ -1,0 +1,121 @@
+---
+- name: Backup Network Device Configurations
+  hosts: network
+  gather_facts: no
+
+  tasks:
+    - name: Create backup directory
+      ansible.builtin.file:
+        path: ./backups
+        state: directory
+        mode: '0755'
+      delegate_to: localhost
+      run_once: true
+
+    - name: Get current timestamp
+      ansible.builtin.command: date +%Y-%m-%d_%H%M%S
+      register: timestamp
+      delegate_to: localhost
+      run_once: true
+      changed_when: false
+
+    - name: Set backup time fact
+      ansible.builtin.set_fact:
+        backup_time: "{{ timestamp.stdout }}"
+
+    - name: Get running configuration
+      cisco.ios.ios_command:
+        commands:
+          - show running-config
+      register: device_config
+
+    - name: Save running configuration to file
+      ansible.builtin.copy:
+        content: "{{ device_config.stdout[0] }}"
+        dest: "./backups/{{ inventory_hostname }}_running_config_{{ backup_time }}.txt"
+      delegate_to: localhost
+
+    - name: Get device version information
+      cisco.ios.ios_command:
+        commands:
+          - show version
+      register: device_version
+
+    - name: Save version information
+      ansible.builtin.copy:
+        content: "{{ device_version.stdout[0] }}"
+        dest: "./backups/{{ inventory_hostname }}_version_{{ backup_time }}.txt"
+      delegate_to: localhost
+
+    - name: Get interface status
+      cisco.ios.ios_command:
+        commands:
+          - show ip interface brief
+      register: interface_status
+
+    - name: Save interface status
+      ansible.builtin.copy:
+        content: "{{ interface_status.stdout[0] }}"
+        dest: "./backups/{{ inventory_hostname }}_interfaces_{{ backup_time }}.txt"
+      delegate_to: localhost
+
+    - name: Get EIGRP neighbors (routers only)
+      cisco.ios.ios_command:
+        commands:
+          - show ip eigrp neighbors
+      register: eigrp_neighbors
+      when: inventory_hostname in groups['routers']
+      failed_when: false
+
+    - name: Save EIGRP neighbors
+      ansible.builtin.copy:
+        content: "{{ eigrp_neighbors.stdout[0] }}"
+        dest: "./backups/{{ inventory_hostname }}_eigrp_neighbors_{{ backup_time }}.txt"
+      delegate_to: localhost
+      when: inventory_hostname in groups['routers'] and eigrp_neighbors.stdout is defined
+
+    - name: Get VLAN information (switch only)
+      cisco.ios.ios_command:
+        commands:
+          - show vlan brief
+      register: vlan_info
+      when: inventory_hostname in groups['switches']
+
+    - name: Save VLAN information
+      ansible.builtin.copy:
+        content: "{{ vlan_info.stdout[0] }}"
+        dest: "./backups/{{ inventory_hostname }}_vlans_{{ backup_time }}.txt"
+      delegate_to: localhost
+      when: inventory_hostname in groups['switches']
+
+    - name: Create backup summary entry
+      ansible.builtin.lineinfile:
+        path: "./backups/backup_summary_{{ backup_time }}.txt"
+        line: "{{ inventory_hostname }}: Backup completed successfully"
+        create: yes
+      delegate_to: localhost
+
+    - name: Display backup confirmation
+      ansible.builtin.debug:
+        msg: "✓ Configuration backed up for {{ inventory_hostname }} to ./backups/"
+
+- name: Display final backup summary
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Find backup files
+      ansible.builtin.find:
+        paths: ./backups
+        file_type: file
+      register: backup_files
+
+    - name: Display backup summary
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "Backup Completed Successfully"
+          - "=========================================="
+          - "Total Files: {{ backup_files.files | length }}"
+          - "Backup Location: ./backups/"
+          - "=========================================="

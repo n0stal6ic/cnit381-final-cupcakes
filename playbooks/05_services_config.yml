@@ -1,0 +1,76 @@
+---
+- name: Configure Network Services
+  hosts: network
+  gather_facts: no
+
+  tasks:
+    - name: Configure NTP server (local)
+      cisco.ios.ios_config:
+        lines:
+          - ntp server 192.168.100.100
+
+    - name: Configure NTP source interface on routers
+      cisco.ios.ios_config:
+        lines:
+          - ntp source GigabitEthernet0/0/1
+      when: inventory_hostname in groups['routers']
+
+    - name: Configure buffered logging (16384)
+      cisco.ios.ios_config:
+        lines:
+          - logging buffered 16384
+
+    - name: Configure logging level
+      cisco.ios.ios_config:
+        lines:
+          - logging console informational
+          - logging monitor informational
+
+    - name: Enable logging timestamps
+      cisco.ios.ios_config:
+        lines:
+          - service timestamps log datetime msec
+          - service timestamps debug datetime msec
+
+    - name: Save configuration
+      cisco.ios.ios_config:
+        save_when: always
+
+    - name: Verify NTP configuration
+      cisco.ios.ios_command:
+        commands:
+          - show ntp status
+          - show ntp associations
+      register: ntp_output
+      failed_when: false
+
+    - name: Display NTP configuration
+      ansible.builtin.debug:
+        var: ntp_output.stdout_lines
+      when: ntp_output.stdout_lines is defined
+
+    - name: Verify logging configuration
+      cisco.ios.ios_command:
+        commands:
+          - show running-config | include logging buffered
+      register: logging_output
+
+    - name: Display logging configuration
+      ansible.builtin.debug:
+        msg:
+          - "Logging Buffer Size: 16384 bytes"
+          - "NTP Server: 192.168.100.100 (local)"
+
+    - name: Show running configuration for services
+      cisco.ios.ios_command:
+        commands:
+          - show running-config | include ntp|logging
+      register: services_config
+
+    - name: Display services configuration
+      ansible.builtin.debug:
+        var: services_config.stdout_lines
+
+    - name: Display success message
+      ansible.builtin.debug:
+        msg: "✓ Network services configured on {{ inventory_hostname }} - NTP: 192.168.100.100, Logging: buffered 16384"

@@ -1,0 +1,61 @@
+---
+- name: Base configuration for routers and switches
+  hosts: network
+  gather_facts: no
+  
+  tasks:
+    - name: Set hostname on R1
+      cisco.ios.ios_config:
+        lines:
+          - hostname R1
+      when: inventory_hostname == 'R1'
+
+    - name: Set hostname on R2
+      cisco.ios.ios_config:
+        lines:
+          - hostname R2
+      when: inventory_hostname == 'R2'
+
+    - name: Set hostname on SW1
+      cisco.ios.ios_config:
+        lines:
+          - hostname SW1
+      when: inventory_hostname == 'SW1'
+
+    - name: Set login banner
+      cisco.ios.ios_banner:
+        banner: login
+        text: |
+          ******************************************
+          * Authorized CNIT 381 Network           *
+          * No Unauthorized Access                *
+          ******************************************
+        state: present
+
+    - name: Set interface descriptions on routers
+      cisco.ios.ios_config:
+        lines:
+          - description Managed by Ansible
+        parents: interface GigabitEthernet0/0/1
+      when: inventory_hostname in groups['routers']
+
+    - name: Set interface description on switch
+      cisco.ios.ios_config:
+        lines:
+          - description Managed by Ansible
+        parents: interface Vlan1
+      when: inventory_hostname in groups['switches']
+
+    - name: Save configuration
+      cisco.ios.ios_config:
+        save_when: always
+
+    - name: Verify hostname
+      cisco.ios.ios_command:
+        commands:
+          - show running-config | include hostname
+      register: hostname_output
+
+    - name: Display results
+      ansible.builtin.debug:
+        msg: "✓ Configuration applied to {{ inventory_hostname }}"

@@ -1,0 +1,10 @@
+---
+- name: Verify connectivity
+  hosts: network
+  gather_facts: no
+
+  tasks:
+    - name: Verify device access using show ip interface brief
+      ios_command:
+        commands:
+          - show ip interface brief

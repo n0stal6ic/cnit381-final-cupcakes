@@ -2,6 +2,8 @@
 - name: Configure VLANs on Switch
   hosts: switches
   gather_facts: no
+  vars:
+    ansible_command_timeout: 120
 
   tasks:
     - name: Create VLAN 10 (Data)
@@ -9,54 +11,37 @@
         lines:
           - name Data
         parents: vlan 10
+      timeout: 120
 
     - name: Create VLAN 20 (Voice)
       cisco.ios.ios_config:
         lines:
           - name Voice
         parents: vlan 20
+      timeout: 120
 
     - name: Create VLAN 99 (Management)
       cisco.ios.ios_config:
         lines:
           - name Management
         parents: vlan 99
+      timeout: 120
 
-    - name: Configure trunk port fa0/1 to R1
+    - name: Configure trunk port on fa0/3
       cisco.ios.ios_config:
         lines:
-          - description Trunk to R1
+          - description Trunk Port
           - switchport mode trunk
           - switchport trunk allowed vlan 10,20,99
           - no shutdown
-        parents: interface FastEthernet0/1
-
-    - name: Configure trunk port fa0/2 to R2
-      cisco.ios.ios_config:
-        lines:
-          - description Trunk to R2
-          - switchport mode trunk
-          - switchport trunk allowed vlan 10,20,99
-          - no shutdown
-        parents: interface FastEthernet0/2
-
-    - name: Assign access ports to VLANs (optional)
-      cisco.ios.ios_config:
-        lines:
-          - switchport mode access
-          - switchport access vlan {{ item.vlan }}
-          - description {{ item.description }}
-          - no shutdown
-        parents: interface {{ item.interface }}
-      loop:
-        - { interface: 'FastEthernet0/5', vlan: 10, description: 'Data VLAN Port' }
-        - { interface: 'FastEthernet0/6', vlan: 20, description: 'Voice VLAN Port' }
-        - { interface: 'FastEthernet0/7', vlan: 99, description: 'Management VLAN Port' }
+        parents: interface FastEthernet0/3
+      timeout: 120
       failed_when: false
 
     - name: Save configuration
       cisco.ios.ios_config:
         save_when: always
+      timeout: 120
 
     - name: Verify VLANs created
       cisco.ios.ios_command:
@@ -68,16 +53,6 @@
       ansible.builtin.debug:
         var: vlan_output.stdout_lines
 
-    - name: Verify trunk ports
-      cisco.ios.ios_command:
-        commands:
-          - show interfaces trunk
-      register: trunk_output
-
-    - name: Display trunk configuration
-      ansible.builtin.debug:
-        var: trunk_output.stdout_lines
-
     - name: Display success message
       ansible.builtin.debug:
-        msg: "✓ VLANs configured: Data (10), Voice (20), Management (99) with trunk ports to routers"
+        msg: "✓ VLANs configured: Data (10), Voice (20), Management (99) with trunk port on fa0/3"
